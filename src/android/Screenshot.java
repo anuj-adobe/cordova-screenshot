@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Base64;
@@ -77,9 +78,12 @@ public class Screenshot extends CordovaPlugin {
         } else {
             //View view = webView.getView();//.getRootView();
             View view = this.cordova.getActivity().getWindow().getDecorView().getRootView();
-            view.setDrawingCacheEnabled(true);
-            bitmap = Bitmap.createBitmap(view.getDrawingCache());
-            view.setDrawingCacheEnabled(false);
+            Bitmap bitmap = Bitmap.createBitmap(
+                view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888
+            );
+            Canvas canvas = new Canvas(bitmap);
+            view.draw(canvas);
+            return bitmap;
         }
 
         return bitmap;
