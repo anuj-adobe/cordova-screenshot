@@ -78,7 +78,7 @@ public class Screenshot extends CordovaPlugin {
         } else {
             //View view = webView.getView();//.getRootView();
             View view = this.cordova.getActivity().getWindow().getDecorView().getRootView();
-            Bitmap bitmap = Bitmap.createBitmap(
+            bitmap = Bitmap.createBitmap(
                 view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888
             );
             Canvas canvas = new Canvas(bitmap);
