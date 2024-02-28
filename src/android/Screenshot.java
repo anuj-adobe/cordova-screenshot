@@ -13,12 +13,19 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
+import android.graphics.Canvas;
 import android.net.Uri;
 import android.os.Environment;
 import android.util.Base64;
 import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.graphics.Rect;
+import android.os.Handler;
+import android.view.PixelCopy;
+import android.view.View;
+import android.view.Window;
+import android.app.Activity;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -75,10 +82,14 @@ public class Screenshot extends CordovaPlugin {
         if (isCrosswalk) {
             webView.getPluginManager().postMessage("captureXWalkBitmap", this);
         } else {
-            View view = webView.getView();//.getRootView();
-            view.setDrawingCacheEnabled(true);
-            bitmap = Bitmap.createBitmap(view.getDrawingCache());
-            view.setDrawingCacheEnabled(false);
+            //View view = webView.getView();//.getRootView();
+            View view = this.cordova.getActivity().getWindow().getDecorView().getRootView();
+            bitmap = Bitmap.createBitmap(
+                view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888
+            );
+            Canvas canvas = new Canvas(bitmap);
+            view.draw(canvas);
+            return bitmap;
         }
 
         return bitmap;
@@ -176,13 +187,40 @@ public class Screenshot extends CordovaPlugin {
 
     public void getScreenshotAsURI() throws JSONException{
         mQuality = (Integer) mArgs.get(0);
-
-        super.cordova.getActivity().runOnUiThread(new Runnable() {
+        Activity activity = super.cordova.getActivity();
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Bitmap bitmap = getBitmap();
-                if (bitmap != null) {
-                    getScreenshotAsURI(bitmap, mQuality);
+                Window window = activity.getWindow();
+                if (window != null) {
+                    View view = window.getDecorView().getRootView();
+                    Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+                    int[] locationOfViewInWindow = new int[2];
+                    view.getLocationInWindow(locationOfViewInWindow);
+                    try {
+                        PixelCopy.request(
+                            window,
+                            new Rect(
+                                locationOfViewInWindow[0],
+                                locationOfViewInWindow[1],
+                                locationOfViewInWindow[0] + view.getWidth(),
+                                locationOfViewInWindow[1] + view.getHeight()
+                            ), bitmap, copyResult -> {
+                                if (copyResult == PixelCopy.SUCCESS) {
+                                    activity.runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            getScreenshotAsURI(bitmap, mQuality);
+                                        }
+                                    });
+                                }
+                            },
+                            new Handler()
+                        );
+                    } catch (IllegalArgumentException e) {
+                        // PixelCopy may throw IllegalArgumentException, make sure to handle it
+                        e.printStackTrace();
+                    }
                 }
             }
         });
@@ -190,7 +228,7 @@ public class Screenshot extends CordovaPlugin {
 
      public void getScreenshotAsURISync() throws JSONException{
         mQuality = (Integer) mArgs.get(0);
-        
+
         Runnable r = new Runnable(){
             @Override
             public void run() {
