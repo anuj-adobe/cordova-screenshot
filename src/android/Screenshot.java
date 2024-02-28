@@ -191,44 +191,37 @@ public class Screenshot extends CordovaPlugin {
         activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
-//                Bitmap bitmap = getBitmap();
-//                if (bitmap != null) {
-//                    getScreenshotAsURI(bitmap, mQuality);
-//                }
-                    Window window = activity.getWindow();
-                    if (window != null) {
-                        View view = window.getDecorView().getRootView();
-                        Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
-                        int[] locationOfViewInWindow = new int[2];
-                        view.getLocationInWindow(locationOfViewInWindow);
-                        try {
-
-                            PixelCopy.request(
-                                window,
-                                new Rect(
-                                        locationOfViewInWindow[0],
-                                        locationOfViewInWindow[1],
-                                        locationOfViewInWindow[0] + view.getWidth(),
-                                        locationOfViewInWindow[1] + view.getHeight()
-                                ), bitmap, copyResult -> {
-                                    if (copyResult == PixelCopy.SUCCESS) {
-                                        activity.runOnUiThread(new Runnable() {
-                                            @Override
-                                            public void run() {
-                                                getScreenshotAsURI(bitmap, mQuality);
-                                            }
-                                        });
-                                    } else {
-                                        // Handle other result codes if needed
-                                    }
-                                },
-                                new Handler()
-                            );
-                        } catch (IllegalArgumentException e) {
-                            // PixelCopy may throw IllegalArgumentException, make sure to handle it
-                            e.printStackTrace();
-                        }
+                Window window = activity.getWindow();
+                if (window != null) {
+                    View view = window.getDecorView().getRootView();
+                    Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
+                    int[] locationOfViewInWindow = new int[2];
+                    view.getLocationInWindow(locationOfViewInWindow);
+                    try {
+                        PixelCopy.request(
+                            window,
+                            new Rect(
+                                locationOfViewInWindow[0],
+                                locationOfViewInWindow[1],
+                                locationOfViewInWindow[0] + view.getWidth(),
+                                locationOfViewInWindow[1] + view.getHeight()
+                            ), bitmap, copyResult -> {
+                                if (copyResult == PixelCopy.SUCCESS) {
+                                    activity.runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            getScreenshotAsURI(bitmap, mQuality);
+                                        }
+                                    });
+                                }
+                            },
+                            new Handler()
+                        );
+                    } catch (IllegalArgumentException e) {
+                        // PixelCopy may throw IllegalArgumentException, make sure to handle it
+                        e.printStackTrace();
                     }
+                }
             }
         });
     }
