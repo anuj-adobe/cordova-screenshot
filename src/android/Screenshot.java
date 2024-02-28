@@ -25,6 +25,7 @@ import android.os.Handler;
 import android.view.PixelCopy;
 import android.view.View;
 import android.view.Window;
+import android.app.Activity;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
@@ -186,17 +187,17 @@ public class Screenshot extends CordovaPlugin {
 
     public void getScreenshotAsURI() throws JSONException{
         mQuality = (Integer) mArgs.get(0);
-
-        super.cordova.getActivity().runOnUiThread(new Runnable() {
+        Activity activity = super.cordova.getActivity();
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
 //                Bitmap bitmap = getBitmap();
 //                if (bitmap != null) {
 //                    getScreenshotAsURI(bitmap, mQuality);
 //                }
-                    Window window = this.cordova.getActivity().getWindow();
+                    Window window = activity.getWindow();
                     if (window != null) {
-                        View view = this.cordova.getActivity().getWindow().getDecorView().getRootView();
+                        View view = window.getDecorView().getRootView();
                         Bitmap bitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(), Bitmap.Config.ARGB_8888);
                         int[] locationOfViewInWindow = new int[2];
                         view.getLocationInWindow(locationOfViewInWindow);
@@ -211,7 +212,12 @@ public class Screenshot extends CordovaPlugin {
                                         locationOfViewInWindow[1] + view.getHeight()
                                 ), bitmap, copyResult -> {
                                     if (copyResult == PixelCopy.SUCCESS) {
-                                        getScreenshotAsURI(bitmap, mQuality);
+                                        activity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                getScreenshotAsURI(bitmap, mQuality);
+                                            }
+                                        });
                                     } else {
                                         // Handle other result codes if needed
                                     }
